@@ -8,6 +8,7 @@ cmake_install.cmake
 *.a
 *.so
 detok
+buildctf
 ctcompare
 twoctcompare
 *lexer.c

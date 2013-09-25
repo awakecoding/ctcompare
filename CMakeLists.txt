@@ -46,6 +46,38 @@ list(APPEND ${MODULE_PREFIX}_SRCS
 
 add_library(${MODULE_NAME} ${${MODULE_PREFIX}_SRCS})
 
+# buildctf
+
+set(MODULE_NAME "buildctf")
+set(MODULE_PREFIX "BUILDCTF")
+
+set(${MODULE_PREFIX}_SRCS
+	buildctf.c)
+
+add_executable(${MODULE_NAME} ${${MODULE_PREFIX}_SRCS})
+
+set(${MODULE_PREFIX}_LIBS ctf)
+
+target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
+
+install(TARGETS ${MODULE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# detok
+
+set(MODULE_NAME "detok")
+set(MODULE_PREFIX "DETOK")
+
+set(${MODULE_PREFIX}_SRCS
+	detok.c)
+
+add_executable(${MODULE_NAME} ${${MODULE_PREFIX}_SRCS})
+
+set(${MODULE_PREFIX}_LIBS ctf)
+
+target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
+
+install(TARGETS ${MODULE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 # ctcompare
 
 set(MODULE_NAME "ctcompare")
@@ -78,18 +110,3 @@ target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
 
 install(TARGETS ${MODULE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-# detok
-
-set(MODULE_NAME "detok")
-set(MODULE_PREFIX "DETOK")
-
-set(${MODULE_PREFIX}_SRCS
-	detok.c)
-
-add_executable(${MODULE_NAME} ${${MODULE_PREFIX}_SRCS})
-
-set(${MODULE_PREFIX}_LIBS ctf)
-
-target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
-
-install(TARGETS ${MODULE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
