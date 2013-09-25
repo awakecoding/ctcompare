@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+my %Run;	# Expanded list of runs
+my $uniqcnt=0;
+my $dupcnt=0;
+
+while (<>) {
+  chomp();
+
+  next if (! (m{\d+\s+(.*):(\d+)-(\d+)\s+(.*):(\d+)-(\d+)}));
+
+  my ($src, $srcstart, $srcend, $dst, $dststart, $dstend)= ($1,$2,$3,$4,$5,$6);
+  my $run= "$src:$srcstart-$srcend $dst:$dststart-$dstend";
+
+  #print("$src, $srcstart, $srcend, $dst, $dststart, $dstend\n");
+
+  # Search for a duplicate hit on the range
+  my $wasdup=0;
+  for (my $i=$srcstart; $i <= $srcend+1; $i++) {
+    for (my $j=$dststart; $j <= $dstend+1; $j++) {
+      my $k= "$src$i$dst$j";
+      if (defined($Run{$k})) {
+	#print("DUP $run => $Run{$k}\n");
+	$wasdup=1; $dupcnt++; $i= $srcend+2; $j= $dstend+2;
+      }
+    }
+  }
+
+  # If we had a dup, move to the next input
+  next if ($wasdup);
+
+  # Not a dup, so mark as unique and fill our range
+  $uniqcnt++;
+  for (my $i=$srcstart; $i <= $srcend+1; $i++) {
+    for (my $j=$dststart; $j <= $dstend+1; $j++) {
+      my $k= "$src$i$dst$j";
+      $Run{$k}=$run;
+    }
+  }
+}
+print("Original $uniqcnt, Splits $dupcnt\n");

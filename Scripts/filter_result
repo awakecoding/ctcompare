@@ -1,0 +1,55 @@
+#!/usr/bin/perl
+# Short script to filter out unwanted false positives from the output
+# of ctcompare. You can limit output to a range of token run lengths,
+# and exclude any runs where certain source code filenames appear.
+#
+# Copyright (c) Warren Toomey, under the GPL3 license.
+# $Revision: 1.3 $
+#
+use strict;
+use warnings;
+
+my $IN;
+my $canprint = 0;
+my ( $min, $max ) = ( 16, 4294967296 );
+my @exclpattern;
+
+# Print usage if we don't have min and max
+if ( $#ARGV < 2 ) {
+    print("Usage: $0 file minimum maximum [exclude regex pattern ...]\n");
+    print("  If maximum==0, no maximum limit is set.\n");
+    print("  Exclude patterns apply only to lines with source filenames\n");
+    exit(1);
+}
+
+# Open up our input file
+open( $IN, $ARGV[0] ) || die("Cannot open $ARGV[0]: $!\n");
+
+# Get the remaining command-line arguments
+$min = $ARGV[1];
+$max = $ARGV[2] if ( $ARGV[2] != 0 );
+shift; shift; shift;
+@exclpattern = @ARGV;
+
+while (<$IN>) {
+    # If we found a ctcompare 3-column header
+    if (/^(\d+)  .*:.*  .*:/) {
+        my $runlength = $1;
+
+        # Allow/exclude it based on the run length
+        if ( ( $runlength > $min ) && ( $runlength < $max ) ) {
+            $canprint = 1;
+        } else {
+            $canprint = 0;
+        }
+
+        # Skip any excluded sections
+        foreach my $patt (@exclpattern) {
+            $canprint = 0 if (/$patt/);
+        }
+    }
+    
+    # Print out a line if we are permitted
+    print if ($canprint);
+}
+close($IN);

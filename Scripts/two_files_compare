@@ -1,0 +1,17 @@
+#!/bin/sh
+# ctcompare two files
+if [ "$#" != "2" ]
+then echo "Usage: $0 file1 file2"; exit 1
+fi
+
+echo a.ctf > ctflist.db
+echo b.ctf >> ctflist.db
+
+rm -rf A B
+mkdir A B
+cp $1 A
+cp $2 B
+chmod 644 A/* B/*
+./buildctf A a.ctf
+./buildctf B b.ctf
+./ctcompare

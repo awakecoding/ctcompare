@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+my $total=0;
+
+# Count the line numbers in each CTF file in the list of args
+
+foreach my $file (@ARGV) {
+
+    my $linecount = 0;
+    my $linenum   = undef;
+
+    open( my $IN, "./detok $file |" ) || die("Cannot open $file: $!");
+    while (<$IN>) {
+        # If a new file, accumulate the linecount and clear it
+        if (/^[A-Za-z]/) {
+            #print("Adding $linenum for $_\n");
+            $linecount += $linenum if ( defined($linenum) );
+            $linenum = undef;
+            next;
+        }
+
+        # If a line, determine the line number
+        if (/^\s*(\d+):/) {
+            $linenum = $1;
+            #print("Found line $linenum\n");
+        }
+    }
+    close($IN);
+
+    # Add on any last file
+    $linecount += $linenum if ( defined($linenum) );
+    $total += $linecount;
+    print("$file: $linecount, total $total\n");
+}
+
+exit(0);

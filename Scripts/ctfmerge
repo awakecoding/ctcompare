@@ -1,0 +1,19 @@
+#!/bin/sh
+# Merge the list of CTF files onto the 1st named file.
+# e.g ctfmerge outfile.ctf  file1.ctf file2.ctf file3.ctf
+
+if [ "$#" -lt 3 ]
+then echo "Usage $0 outfile.ctf  file1.ctf file2.ctf ..."; exit 1
+fi
+
+outfile=$1; firstfile=$2; shift; shift;
+
+# Copy all but the last octet from firstfile to outfile
+head -c -1 $firstfile > $outfile
+
+# For the remaining files, loase the first 6 bytes and the last byte
+for i in $*
+do dd if=$i bs=6 skip=1 | head -c -1 >> $outfile
+done
+
+exit 0

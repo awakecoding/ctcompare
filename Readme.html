@@ -1,0 +1,456 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.2  (Linux)">
+	<META NAME="AUTHOR" CONTENT="Warren Toomey">
+	<META NAME="CREATED" CONTENT="20091221;17494400">
+	<META NAME="CHANGEDBY" CONTENT="Warren Toomey">
+	<META NAME="CHANGED" CONTENT="20111212;11060700">
+	<META NAME="CHANGEDBY" CONTENT="Warren Toomey">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 2cm }
+		TD P { margin-bottom: 0.21cm }
+		H1 { margin-bottom: 0.21cm }
+		H1.western { font-family: "Arial", sans-serif; font-size: 16pt }
+		H1.cjk { font-family: "DejaVu Sans"; font-size: 16pt }
+		H1.ctl { font-family: "DejaVu Sans"; font-size: 16pt }
+		P { margin-bottom: 0.21cm }
+		H2 { margin-bottom: 0.21cm }
+		H2.western { font-family: "Arial", sans-serif; font-size: 14pt; font-style: italic }
+		H2.cjk { font-size: 14pt; font-style: italic }
+		H2.ctl { font-size: 14pt; font-style: italic }
+		H3 { margin-bottom: 0.21cm }
+		H3.western { font-family: "Arial", sans-serif }
+		PRE.cjk { font-family: "DejaVu Sans", monospace }
+		A:link { so-language: zxx }
+		TT.cjk { font-family: "DejaVu Sans", monospace }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-AU" DIR="LTR">
+<H1 CLASS="western" ALIGN=CENTER>Code Token Comparator Version 3.2</H1>
+<H3 CLASS="western" ALIGN=CENTER>(c) 2007-2011, Warren Toomey
+<A HREF="mailto:wkt@tuhs.org">wkt@tuhs.org</A><A HREF="mailto:wkt@tuhs.org"><BR></A>under
+the GPL v3 license</H3>
+<H2 CLASS="western" STYLE="font-style: normal">Introduction</H2>
+<P STYLE="margin-bottom: 0cm">The purpose of this set of programs is
+to allow you to compare several sets of C, Java, Python or Perl code
+trees on a token basis, rather than on a line by line basis. The
+programs help to identify similarities between snippets of code in
+the trees, even if the actual lines are dissimilar. For background on
+how the tools work, see the papers, slides and audio at this website:</P>
+<P ALIGN=CENTER STYLE="margin-bottom: 0cm"><A HREF="http://minnie.tuhs.org/Programs/Ctcompare">http://minnie.tuhs.org/Programs/Ctcompare</A></P>
+<H2 CLASS="western" STYLE="font-style: normal">Changelog</H2>
+<P STYLE="font-style: normal">3.2: Memory and performance
+inprovements, up to 2 times faster than the 3.1 codebase. Several
+other lexers. New flags: -s to split large code trees, and -u to
+break up num,num,num,num runs in CTF files so that these runs of
+tokens are not compared.</P>
+<P STYLE="font-style: normal">3.1: A complete rewrite of the code,
+making it 5 to 10 times faster than the 2.x codebase. The code is now
+structured as a library with command-line front-end tools.</P>
+<H2 CLASS="western" STYLE="font-style: normal">Building the Tools,
+Configuring the Makefile</H2>
+<P><SPAN STYLE="font-style: normal">This is still a research-oriented
+work in progress, so there's no </SPAN><I>./configure; make install</I>
+<SPAN STYLE="font-style: normal">here. You will need: make, lex or
+flex, a C Compiler, the </SPAN><I>fts(3)</I> <SPAN STYLE="font-style: normal">function
+and a FreeBSD or Linux box.</SPAN></P>
+<P STYLE="font-style: normal">The Makefile is set up to for Ubuntu
+and to do optimised compiling. However, read through the Makefile
+before you run 'make' to make the three programs: <I>buildctf</I>,
+<I>detok</I> and <I>ctcompare</I>.</P>
+<P STYLE="font-style: normal">If the make fails, you're on your own!
+The programs are small enough to make the chore of fixing them not
+too difficult. The code compiles and runs on FreeBSD 8.0, and Ubuntu
+Linux 10.04. At present, the code expects a 32-bit platform; it may
+not compile and run on a 64-bit platform (but patches to do so are
+most welcome!).</P>
+<P STYLE="font-style: normal">You can either leave the three programs
+here, or you can copy them into a directory in your $PATH, e.g.
+<FONT FACE="DejaVu Sans Mono, sans-serif">/usr/local/bin</FONT>. I
+assume below that you are going to run them from this directory.</P>
+<H2 CLASS="western" STYLE="font-style: normal">Tokenising a Code Tree</H2>
+<P><SPAN STYLE="font-style: normal">If you have a C, Java, Python or
+Perl code tree in a directory (and subdirectories therein) called
+</SPAN><TT CLASS="western"><SPAN STYLE="font-style: normal">/some/where/code</SPAN></TT>
+<SPAN STYLE="font-style: normal">and you want to tokenise the files
+in the tree and store the result in a &quot;Code Token File&quot;
+(CTF file) called </SPAN><I>mytree.ctf</I><SPAN STYLE="font-style: normal">,
+you would do:</SPAN></P>
+<PRE CLASS="western" STYLE="margin-bottom: 0.5cm">  <SPAN STYLE="font-style: normal">$ ./buildctf  /some/where/code   mytree.ctf</SPAN></PRE><P>
+<SPAN STYLE="font-style: normal">The directory name can be relative
+or absolute (i.e. it doesn't have to start with a /). However note
+that other tools like </SPAN><I>ctcompare</I> <SPAN STYLE="font-style: normal">may
+need to open the source files to print out snippets of code. If you
+choose a relative directory name, you will need to run </SPAN><I>ctcompare</I>
+<SPAN STYLE="font-style: normal">in the same directory that you ran
+</SPAN><I>buildctf</I><SPAN STYLE="font-style: normal">.</SPAN></P>
+<H2 CLASS="western" STYLE="font-style: normal">What Does a CTF File
+Reveal About the Source Code?</H2>
+<P STYLE="font-style: normal">The aim of the CTF file format is to
+allow a compact representation of a code tree to be exported in a way
+that allows similarities to be found, but in such a way that the
+complete source code is not revealed. This should allow proprietary
+code trees to be exported in CTF format.</P>
+<P STYLE="font-style: normal">A CTF file will reveal this about your
+source code tree:</P>
+<UL>
+	<LI><P STYLE="font-style: normal">the name of every source file in
+	your tree</P>
+	<LI><P STYLE="font-style: normal">the last modification time for
+	each source file</P>
+	<LI><P STYLE="font-style: normal">a syntactical representation of
+	each source file, i.e. syntax elements such as () [] {} -&gt; == +=
+	#include etc.</P>
+	<LI><P STYLE="font-style: normal">where literal elements occur in
+	the file's syntax; this includes labels, string literals, character
+	literals, numeric literals, and identifiers</P>
+	<LI><P STYLE="font-style: normal">a 16-bit hashed value of each
+	literal element</P>
+</UL>
+<P><SPAN STYLE="font-style: normal">Note that the actual values for
+literal constants and identifiers are not revealed, i.e. if you use
+the variable </SPAN><I>foobar</I><SPAN STYLE="font-style: normal">,
+then this will not be revealed. However, a 16-bit hash of the word
+&quot;</SPAN><I>foobar</I><SPAN STYLE="font-style: normal">&quot; is
+revealed, so a dictionary attack will provide a list of possible
+variable names that produce the same hash value. A 16-bit hash was
+purposefully chosen to increase the likelihood of collisions, thus
+reducing the effectiveness of a dictionary attack. Full details of
+the CTF file format are given below.</SPAN></P>
+<H2 CLASS="western" STYLE="font-style: normal">Viewing the Tokenised
+Results File</H2>
+<P><SPAN STYLE="font-style: normal">To view the contents of the
+resulting CTF file, use the </SPAN><I>detok</I> <SPAN STYLE="font-style: normal">command:</SPAN></P>
+<PRE CLASS="western" STYLE="margin-bottom: 0.5cm">  <SPAN STYLE="font-style: normal">$ ./detok mytree.ctf | less</SPAN></PRE><P>
+<SPAN STYLE="font-style: normal">This shows you the basic code tokens
+for each file in your source tree. An example CTF file is provided in
+the </SPAN><I>ctcompare</I> <SPAN STYLE="font-style: normal">tarball.</SPAN></P>
+<H2 CLASS="western" STYLE="font-style: normal">Keeping a List of CTF
+Files</H2>
+<P STYLE="font-style: normal">The tool to find code similarities,
+<I>ctcompare</I>, selects which CTF files to cross-compare as
+follows:</P>
+<UL>
+	<LI><P><SPAN STYLE="font-style: normal">the text file </SPAN><I>ctflist.db</I>
+	<SPAN STYLE="font-style: normal">in the current directory is loaded:
+	each line contains the relative or absolute pathname of a CTF file
+	which is to be compared. No error will occur if the </SPAN><I>ctflist.db</I>
+	<SPAN STYLE="font-style: normal">file does not exist.</SPAN></P>
+	<LI><P><SPAN STYLE="font-style: normal">extra CTF files not named in
+	the </SPAN><I>ctflist.db</I> <SPAN STYLE="font-style: normal">file
+	can be named as command-line arguments to </SPAN><I>ctcompare</I><SPAN STYLE="font-style: normal">.</SPAN></P>
+</UL>
+<P><SPAN STYLE="font-style: normal">You can hand-edit the </SPAN><I>ctflist.db</I>
+<SPAN STYLE="font-style: normal">file; alternatively, when you
+tokenise a source tree using </SPAN><I>buildctf</I><SPAN STYLE="font-style: normal">,
+you can specify the -d flag to append the name of the created CTF
+file to the </SPAN><I>ctflist.db</I> <SPAN STYLE="font-style: normal">file.</SPAN></P>
+<H2 CLASS="western" STYLE="font-style: normal">Comparing Source Trees</H2>
+<P><SPAN STYLE="font-style: normal">With all the source tree you want
+tokenised into CTF files, and the list of CTF files stored in
+</SPAN><I>ctflist.db</I><SPAN STYLE="font-style: normal">, you can
+now search for code similarities. This is done with the </SPAN><I>ctcompare</I>
+<SPAN STYLE="font-style: normal">tool:</SPAN></P>
+<PRE CLASS="western" STYLE="margin-bottom: 0.5cm">  <SPAN STYLE="font-style: normal">$ ./ctcompare | less</SPAN></PRE><P STYLE="font-style: normal">
+will compare all the trees named in the <I>ctflist.db</I> file, and
+print out the source files from different trees which have 16 or more
+matching tokens, and literal elements (e.g. identifiers) with the
+same hash value. The result has 3 tab-separated columns:</P>
+<BLOCKQUOTE STYLE="font-style: normal">#tokens_in_common
+filename:start-end_line filename:start-end_line</BLOCKQUOTE>
+<P STYLE="font-style: normal">The 1st column is the number of source
+code tokens found to be consecutive. The 2nd column names a file,
+start and end line of the run of matching tokens. The 3rd column
+names a file, start and end line of the run of matching tokens.</P>
+<H2 CLASS="western" STYLE="font-style: normal">Options to Ctcompare</H2>
+<P><I>Ctcompare</I> <SPAN STYLE="font-style: normal">has several
+options:</SPAN></P>
+<P>Usage: ctcompare [-n nnn] [-rstxiaq] [-I nnn] [CTF file] [CTF
+file...] 
+</P>
+<UL>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-n nnn: set the minimum
+	matching run length to nnn</BLOCKQUOTE>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-r: print results sorted
+	by run length descending</BLOCKQUOTE>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-t: show matching tokens
+	when a match is found</BLOCKQUOTE>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-x: show matching source
+	lines when a match is found</BLOCKQUOTE>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-s: similar to -x, but
+	print results side by side on the same line</BLOCKQUOTE>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-i: enable isomorphic
+	code comparison, see below</BLOCKQUOTE>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-I nnn: limit the # of
+	isomorphic relations to nnn, implies -i</BLOCKQUOTE>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-a: show all matches even
+	if they are in the same source tree</BLOCKQUOTE>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-q: quiet, only print the
+	number of matches found</BLOCKQUOTE>
+	<LI><BLOCKQUOTE STYLE="font-style: normal">-u: break up
+	num,num,num,num runs in CTF files so that these runs of tokens are
+	not compared</BLOCKQUOTE>
+</UL>
+<BLOCKQUOTE STYLE="font-style: normal">CTF file arguments augment
+those in the <I>ctflist.db</I> file</BLOCKQUOTE>
+<H2 CLASS="western" STYLE="font-style: normal">Isomorphic Code
+Comparison</H2>
+<P STYLE="font-style: normal">The default code comparison is an exact
+comparison: not only must lexical elements (such as () {} [] ++ +=
+etc.) match, but variable names must also match. <I>Ctcompare</I>
+also supports &quot;isomorphic&quot; code comparison with the -i and
+-I nnn options.</P>
+<P STYLE="font-style: normal">Code that is isomorphic can be detected
+if there is a 1-to-1 relationship between identifiers. For example,
+the following two functions perform the same action although the
+variable names are different.</P>
+<PRE CLASS="western">   <SPAN STYLE="font-style: normal">int maxofthree(int x, int y, int z)</SPAN>
+   <SPAN STYLE="font-style: normal">{</SPAN>
+     <SPAN STYLE="font-style: normal">if ((x&gt;y) &amp;&amp; (x&gt;z)) return(x);</SPAN>
+     <SPAN STYLE="font-style: normal">if (y&gt;z) return(y);</SPAN>
+     <SPAN STYLE="font-style: normal">return(z);</SPAN>
+   <SPAN STYLE="font-style: normal">}          </SPAN>
+
+   <SPAN STYLE="font-style: normal">int bigtriple(int b, int a, int c)</SPAN>
+   <SPAN STYLE="font-style: normal">{</SPAN>
+     <SPAN STYLE="font-style: normal">if ((b&gt;a) &amp;&amp; (b&gt;c)) return(b);</SPAN>
+     <SPAN STYLE="font-style: normal">if (a&gt;c) return(a);</SPAN>
+     <SPAN STYLE="font-style: normal">return(c);</SPAN>
+   <SPAN STYLE="font-style: normal">}</SPAN></PRE><P STYLE="font-style: normal">
+<I>Ctcompare</I>, with the -i option, will perform isomorphic code
+comparison and will find code similarities such as the one above.
+Note, however, that this does slow the operation down significantly,
+and there will be many false positives.</P>
+<P STYLE="font-style: normal">By default, <I>ctcompare</I> will give
+up on a potential run when the number of isomorphic relations exceeds
+3, e.g. in the above example there are 3 relations: x &lt;=&gt; b, y
+&lt;=&gt; a and z &lt;=&gt; c. If a new variable called &quot;fred&quot;
+appeared in the top function that was isomorphic to a new variable
+&quot;mary&quot; in the bottom function, <I>ctcompare</I> would give
+up as that would be a 4th isomorphic relation. You can control the
+number of isomorphic relations with the -I nnn option, e.g.</P>
+<PRE CLASS="western">  <SPAN STYLE="font-style: normal">$ ./ctcompare -i | less       # isomorphic comparison with &lt;=3 relations</SPAN>
+  <SPAN STYLE="font-style: normal">$ ./ctcompare -I 10 | less    # isomorphic comparison with &lt;=10 relations</SPAN></PRE><P STYLE="font-style: normal">
+With high -I values (10 or more), you will start to see lots of false
+positives. I recommend that you start with a high token threshold
+such as -n 50 and the default -I 3 to find the largest matches with
+few isomorphic relations, and then iteratively lower -n and/or raise
+-I until you start to see lots of false positives.</P>
+<H2 CLASS="western" STYLE="font-style: normal">Memory Issues</H2>
+<P STYLE="font-style: normal"><I>Ctcompare</I> trades increased
+memory usage for faster results. When running, the memory usage will
+be 128 Mbytes + 20 bytes per token + 28 bytes per run found. To
+reduce runtime, allocated memory is not freed. To compare code trees
+totalling a million lines of code, for example, you will probably
+need a Gigabyte of free RAM or more.</P>
+<H2 CLASS="western" STYLE="font-style: normal">Other Scripts</H2>
+<P STYLE="font-style: normal">There are a couple of Perl scripts that
+help you deal with the output from <I>ctcompare</I>. Assume that you
+have done the following:</P>
+<PRE CLASS="western" STYLE="margin-bottom: 0.5cm">  $ ./ctcompare -i -n 30 -x &gt; output</PRE><P STYLE="font-style: normal">
+but the output has thousands of results, and many are ignorable, e.g.</P>
+<PRE CLASS="western" STYLE="font-style: normal">41  Linux0.96c/chr_drv/keyboard.c:1083-1088  /Net2/sys/kern/tty_conf.c:63-69
+        <SPAN STYLE="font-style: normal">do_self,do_self,do_self,do_self,        /* 04-07 3 4 5 6 */</SPAN>
+        <SPAN STYLE="font-style: normal">do_self,do_self,do_self,do_self,        /* 08-0B 7 8 9 0 */</SPAN>
+        <SPAN STYLE="font-style: normal">do_self,do_self,do_self,do_self,        /* 0C-0F + ' bs tab */</SPAN>
+        <SPAN STYLE="font-style: normal">do_self,do_self,do_self,do_self,        /* 10-13 q w e r */</SPAN>
+        <SPAN STYLE="font-style: normal">do_self,do_self,do_self,do_self,        /* 14-17 t y u i */</SPAN>
+=====================================
+        <SPAN STYLE="font-style: normal">enodev, enodev, enodev, enodev, enodev,         /* 1- defunct */</SPAN>
+        <SPAN STYLE="font-style: normal">enodev, enodev, enodev, enodev, enodev,</SPAN>
+        <SPAN STYLE="font-style: normal">enodev, enodev, enodev, enodev, enodev,         /* 2- defunct */</SPAN>
+        <SPAN STYLE="font-style: normal">enodev, enodev, enodev, enodev, enodev,</SPAN></PRE><P STYLE="font-style: normal">
+The Perl script <I>filter_result</I> can be used to filter out
+unwanted results from the output file. Usage is:</P>
+<PRE CLASS="western" STYLE="margin-bottom: 0.5cm">  <SPAN STYLE="font-style: normal">$ ./filter_result filename minimum maximum [exclude regex pattern ...]</SPAN></PRE><BLOCKQUOTE>
+<I>minimum</I> <SPAN STYLE="font-style: normal">is the minimum run
+size to show, default 16. </SPAN><I>maximum</I> <SPAN STYLE="font-style: normal">is
+the maximum run size to show, default infinity. If you set </SPAN><I>maximum</I>
+<SPAN STYLE="font-style: normal">to 0, it is interpreted as infinity.
+Exclude patterns apply only to lines in the output file which have
+source file called </SPAN><I>filename.</I></BLOCKQUOTE>
+<P STYLE="font-style: normal">Now you can eliminate <I>keyboard.c</I>
+from the output, and show runs with 40 or more tokens:</P>
+<PRE CLASS="western" STYLE="margin-bottom: 0.5cm">  <SPAN STYLE="font-style: normal">$ ./filter_result output 40 0 keyboard.c | less</SPAN></PRE><P STYLE="font-style: normal">
+A second Perl script takes the output from <I>ctcompare</I>, and
+shows the file pairs in the output that are most related, i.e. have
+the largest number of token runs. You can do this as follows:</P>
+<PRE CLASS="western" STYLE="margin-bottom: 0.5cm">  <SPAN STYLE="font-style: normal">$ ./sum_filepairs output | less</SPAN></PRE><P STYLE="font-style: normal">
+to see output similar to this:</P>
+<PRE CLASS="western" STYLE="font-style: normal">14600: Src/32V/sys/sys/tty.c  Src/V7/dev/tty.c
+3630: Src/32V/sys/sys/mx2.c  Src/V7/dev/mx2.c
+2573: Src/32V/sys/sys/sys1.c  Src/V7/sys/sys1.c
+2511: Src/32V/sys/sys/bio.c  Src/V7/dev/bio.c
+2300: Src/32V/sys/sys/mx1.c  Src/V7/dev/mx1.c
+1939: Src/32V/sys/sys/sys4.c  Src/V7/sys/sys4.c
+1938: Src/32V/sys/sys/prim.c  Src/V7/sys/prim.c
+1926: Src/32V/sys/sys/sys2.c  Src/V7/sys/sys2.c</PRE><P STYLE="font-style: normal">
+<B>Note:</B> both <I>filter_result</I> and <I>sum_filepairs</I> can
+read from standard input if &quot;<FONT FACE="DejaVu Sans Mono, sans-serif">-</FONT>&quot;
+is given as the filename, so you can even do this if you wish:</P>
+<PRE CLASS="western">  <SPAN STYLE="font-style: normal">$ ./ctcompare -i -n 30 -x | ./filter_result - 40 0 keyboard.c | \</SPAN>
+                                                    <SPAN STYLE="font-style: normal">./sum_filepairs - | less</SPAN></PRE><H2 CLASS="western" STYLE="font-style: normal">
+Comparing Other Languages</H2>
+<P STYLE="font-style: normal">At present <I>ctcompare</I> supports 4
+languages: C, Java, Python and Perl. To add support for another
+language: choose up to 255 tokens (remember, each token is an octet),
+copy one of the existing lexers and modify it to perform the lexical
+analysis for the new language. Then modify <I>lexer.c</I> and the
+<I>Makefile</I> to use it.</P>
+<H2 CLASS="western" STYLE="font-style: normal">Known Bugs</H2>
+<P STYLE="font-style: normal">Internally, <I>ctcompare</I> uses
+hashing to speed the lookups of code similarities. This may lead to a
+very small number of false positives. In practice, you would have to
+wade through hundreds of thousands of real code similarities to find
+an incorrect code similarity reported by <I>ctcompare</I>.</P>
+<H2 CLASS="western" STYLE="font-style: normal">Feedback and Support</H2>
+<P STYLE="font-style: normal">I probably can't offer much in the way
+of support, as this is a tool to scratch my itch and to do some
+academic research. However, I am interested in your feedback and bug
+fixes :-) Please e-mail me with any comments at <I>wkt@tuhs.org</I>.</P>
+<P STYLE="font-style: normal">I am especially interested in CTF files
+of proprietary UNIX source trees, especially for SysVR4 onwards. If
+you can provide any of these, I wouldbe most grateful.</P>
+<H2 CLASS="western" STYLE="font-style: normal">Related Programs</H2>
+<P><SPAN STYLE="font-style: normal">Eric Raymond has written a tool
+called comparator, available at <A HREF="http://www.catb.org/~esr/comparator/">http://www.catb.org/~esr/comparator/</A>.
+It works as follows:</SPAN></P>
+<BLOCKQUOTE STYLE="font-style: normal">[comparator] works by first
+chopping the specified trees into overlapping shreds (by default 3
+lines long) and computing a hash of each shred. The resulting list of
+shreds is examined and all unique hashes are thrown out. Then
+comparator generates a report listing all cliques of lines with
+duplicate hashes, with overlapping ranges merged. ... A consequence
+of the method is that comparator will find common code segments
+wherever they are. It is insensitive to rearrangements of the source
+trees.</BLOCKQUOTE>
+<P><SPAN STYLE="font-style: normal">Dick Grune has written a
+token-based tool called SIM, available at
+<A HREF="http://www.cs.vu.nl/~dick/sim.html">http://www.cs.vu.nl/~dick/sim.html</A>.
+It uses tokens in the same way as </SPAN><I>ctcompare</I><SPAN STYLE="font-style: normal">,
+but does not seem to use literal or identifer values in the code
+comparison.</SPAN></P>
+<P STYLE="font-style: normal">If anybody knows of any other freely
+available tools dealing with code comparison, I would be grateful if
+you e-mailed me the details.</P>
+<H2 CLASS="western" STYLE="font-style: normal">Using libctf.a</H2>
+<P STYLE="font-style: normal">The 3.x codebase is now organised as a
+library <I>libctf.a</I> and header file <I>libctf.h</I>, with the
+front-end programs <I>buildctf</I>, <I>detok</I> and <I>ctcompare</I>.
+I haven't written any good documentation for the library yet, for for
+now please read the header file and look at the source code for the
+front-end programs to give you ideas on how to use the library.
+Please bug me with question, as that will encourage me to write the
+doc file.</P>
+<H2 CLASS="western" STYLE="font-style: normal">CTF File Format</H2>
+<P STYLE="font-style: normal">The aim of the CTF file format is to
+allow a representation of a code tree to be exported in a way that
+allows similarities to be found, but in such a way that the complete
+source code is not revealed. This should allow proprietary code trees
+to be exported in CTF format.</P>
+<P STYLE="font-style: normal">A CTF file contains:</P>
+<UL>
+	<LI><P STYLE="font-style: normal">strings, which occur in normal
+	text format and are terminated with a 0x00 octet, as per C,</P>
+	<LI><P STYLE="font-style: normal">single-octet tokens, and</P>
+	<LI><P STYLE="font-style: normal">multi-octet unsigned integer (16-
+	or 32-bit) values in big-endian format.</P>
+</UL>
+<P STYLE="font-style: normal">Each CTF file begins with a string
+header indicating the CTF version. Currently, this is &quot;CTF2.1&quot;
+followed by a 0x00 octet.</P>
+<P STYLE="font-style: normal">After the CTF header, the CTF file is
+composed of a set of variable-length records, one for each file which
+has been tokenised. Each file record starts with the octet 0x09. This
+is followed by the file's 4-octet last modification timestamp
+(seconds since 1970) in big-endian format. This is followed by the
+filename in ASCII, terminated by a 0x00 octet. This is then followed
+by a set of tokens for the file.</P>
+<P STYLE="font-style: normal">Most tokens are 1 octet long, and are
+listed in <I>libtokens.h</I>. However, the following token values
+represent literal elements with values:</P>
+<P>IDENTIFIER: 0x5f<BR>INTVAL: 0x39<BR>CHARCONST: 0x27<BR>STRINGLIT:
+0x22<BR>LABEL: 0x60 
+</P>
+<P STYLE="font-style: normal">Each of these tokens is followed by 2
+octets which represent, in big-endian format, the hashed value of
+that specific literal element in the file. For example, take the
+short C code:</P>
+<PRE CLASS="western">        void print_word(char *str) {
+          char *c;
+          
+          c=str;
+          while ((c!='\0') &amp;&amp; (c!=' ')) putchar(c++);
+          putchar('\n');
+        }</PRE><P STYLE="font-style: normal">
+There are several identifiers and character constants in the code. As
+<I>buildctf</I> parses the file, it creates a 16-bit hash for each
+one:</P>
+<CENTER>
+	<TABLE WIDTH=302 BORDER=1 CELLPADDING=4 CELLSPACING=3 STYLE="page-break-inside: avoid">
+		<COL WIDTH=139>
+		<COL WIDTH=136>
+		<TR VALIGN=TOP>
+			<TD WIDTH=139>
+				<P ALIGN=CENTER><B>Literal Value</B></P>
+			</TD>
+			<TD WIDTH=136>
+				<P ALIGN=CENTER><B>Hash Value</B></P>
+			</TD>
+		</TR>
+		<TR VALIGN=TOP>
+			<TD WIDTH=139>
+				<P>print_word</P>
+			</TD>
+			<TD WIDTH=136 SDVAL="13043" SDNUM="3081;">
+				<P>13043</P>
+			</TD>
+		</TR>
+		<TR VALIGN=TOP>
+			<TD WIDTH=139>
+				<P>str</P>
+			</TD>
+			<TD WIDTH=136 SDVAL="6928" SDNUM="3081;">
+				<P>6928</P>
+			</TD>
+		</TR>
+		<TR VALIGN=TOP>
+			<TD WIDTH=139>
+				<P>c</P>
+			</TD>
+			<TD WIDTH=136 SDVAL="23749" SDNUM="3081;">
+				<P>23749</P>
+			</TD>
+		</TR>
+		<TR VALIGN=TOP>
+			<TD WIDTH=139>
+				<P>putchar</P>
+			</TD>
+			<TD WIDTH=136 SDVAL="32886" SDNUM="3081;">
+				<P>32886</P>
+			</TD>
+		</TR>
+	</TABLE>
+</CENTER>
+<P STYLE="font-style: normal">Thus, the code would be represented in
+the CTF file as follows:</P>
+<PRE CLASS="western">  void id13043 ( char * id6928 ) { 
+    char * id23749; 
+
+    id23749 = id6928; 
+    while ((id23749 != 'c7388') &amp;&amp; (id23749 != 'c20789')) id32886(id23749++); 
+    id32886 ('c12652'); 
+  } </PRE><P STYLE="font-style: normal">
+The set of tokens representing a single source file in the CTF file
+is terminated either by 0x09, i.e. the beginning of a new file, or
+the end of file token (0x00). It goes without saying that the values
+0x09 and 0x00 do not represent actual source tokens. Similarly, the
+value 0x0A represents a newline in the source file, and does not
+represent an actual source token.</P>
+</BODY>
+</HTML>

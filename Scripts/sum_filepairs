@@ -1,0 +1,48 @@
+#!/usr/bin/perl
+#
+# sum_filepairs: Read ctcompare output and find the highest related pairs
+# of files in the output. This script prints the list from file pairs with
+# the highest number of token runs down.
+#
+# Copyright (c) Warren Toomey, under the GPL3 license.
+# $Revision: 1.2 $
+#
+use strict;
+use warnings;
+
+my $IN;
+my %FilePairCount;
+
+# Print usage
+if ( $#ARGV != 0 ) {
+    print("Usage: $0 file, or $0 - to read from stdin\n");
+    exit(1);
+}
+
+# Open up our input file
+open( $IN, $ARGV[0] ) || die("Cannot open $ARGV[0]: $!\n");
+
+while (<$IN>) {
+    chop;
+
+    # If we found a ctcompare 3-column header
+    if (/^(\d+)\s+(\S+)\s+(\S+)/) {
+        my $runlength = $1;
+        my $file1     = $2;
+        my $file2     = $3;
+        $file1 =~ s/:.*//;
+        $file2 =~ s/:.*//;
+
+        # Add on the number of tokens common to the 2 files
+        $FilePairCount{"$file1  $file2"} += $runlength;
+    }
+}
+close($IN);
+
+# Now print out the list of file pairs, sorted by the highest count down
+foreach my $key ( sort { $FilePairCount{$b} <=> $FilePairCount{$a} }
+                  keys %FilePairCount
+  ) {
+    print("$FilePairCount{$key}: $key\n");
+}
+exit(0);
