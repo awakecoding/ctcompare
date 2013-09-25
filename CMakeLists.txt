@@ -5,6 +5,9 @@ project(ctcompare C)
 
 set(CMAKE_COLOR_MAKEFILE ON)
 
+include(GNUInstallDirs)
+include(CMakeDetermineSystem)
+
 find_package(FLEX)
 
 # lexers
@@ -57,6 +60,8 @@ set(${MODULE_PREFIX}_LIBS ctf)
 
 target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
 
+install(TARGETS ${MODULE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 # twoctcompare
 
 set(MODULE_NAME "twoctcompare")
@@ -71,6 +76,8 @@ set(${MODULE_PREFIX}_LIBS ctf)
 
 target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
 
+install(TARGETS ${MODULE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 # detok
 
 set(MODULE_NAME "detok")
@@ -84,3 +91,5 @@ add_executable(${MODULE_NAME} ${${MODULE_PREFIX}_SRCS})
 set(${MODULE_PREFIX}_LIBS ctf)
 
 target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
+
+install(TARGETS ${MODULE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
